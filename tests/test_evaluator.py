@@ -43,3 +43,44 @@ class TestOnePair:
         cat2, chosen2 = evaluate_hand(cards2)
         assert cat1 == cat2 == HandCategory.ONE_PAIR
         assert chosen1[0].rank == Rank.ACE and chosen2[0].rank == Rank.KING
+
+class TestTwoPair:
+    def test_detect_two_pair(self):
+        cards = parse_cards("As", "Ad", "Kh", "Kd", "10c", "5s", "7h")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.TWO_PAIR
+
+    def test_two_pair_chosen5_high_pair_low_pair_kicker(self):
+        cards = parse_cards("As", "Ad", "Kh", "Kd", "10c", "5s", "7h")
+        _, chosen = evaluate_hand(cards)
+        assert chosen[0].rank == Rank.ACE and chosen[1].rank == Rank.ACE
+        assert chosen[2].rank == Rank.KING and chosen[3].rank == Rank.KING
+        assert chosen[4].rank == Rank.TEN
+
+    def test_two_pair_tie_break_high_pair_then_low_pair_then_kicker(self):
+        cards1 = parse_cards("As", "Ad", "Kh", "Kd", "10c", "5s", "7h")
+        cards2 = parse_cards("As", "Ad", "Kh", "Kd", "Jc", "5s", "7h")
+        _, chosen1 = evaluate_hand(cards1)
+        _, chosen2 = evaluate_hand(cards2)
+        assert chosen1[4].rank == Rank.TEN
+        assert chosen2[4].rank == Rank.JACK
+
+class TestThreeOfAKind:
+    def test_detect_three_of_a_kind(self):
+        cards = parse_cards("As", "Ad", "Ah", "Kd", "10c", "5s", "7h")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.THREE_OF_A_KIND
+
+    def test_three_of_a_kind_chosen5_triplet_then_kickers(self):
+        cards = parse_cards("As", "Ad", "Ah", "Kd", "10c", "5s", "7h")
+        _, chosen = evaluate_hand(cards)
+        assert chosen[0].rank == chosen[1].rank == chosen[2].rank == Rank.ACE
+        assert [c.rank for c in chosen[3:]] == [Rank.KING, Rank.TEN]
+
+    def test_three_of_a_kind_tie_break_triplet_then_kickers(self):
+        cards1 = parse_cards("As", "Ad", "Ah", "Kd", "10c", "5s", "7h")
+        cards2 = parse_cards("Ks", "Kd", "Kh", "Ad", "10c", "5s", "7h")
+        cat1, chosen1 = evaluate_hand(cards1)
+        cat2, chosen2 = evaluate_hand(cards2)
+        assert cat1 == cat2 == HandCategory.THREE_OF_A_KIND
+        assert chosen1[0].rank == Rank.ACE and chosen2[0].rank == Rank.KING
