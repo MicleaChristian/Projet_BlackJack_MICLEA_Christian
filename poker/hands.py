@@ -44,6 +44,10 @@ def _eval_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], Tuple[int, 
     if len(cards) != 5:
         raise ValueError("Need exactly 5 cards")
 
+    straight = _find_straight(cards)
+    if straight:
+        return _build_straight(cards, straight)
+
     trips = _find_trips(cards)
     if trips:
         return _build_three_of_a_kind(cards, trips)
@@ -57,6 +61,35 @@ def _eval_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], Tuple[int, 
         return _build_one_pair(cards, pair)
 
     return _build_high_card(cards)
+
+def _find_straight(cards: List[Card]) -> int | None:
+    
+    ranks = sorted(set(c.rank for c in cards), reverse=True)
+    if len(ranks) != 5:
+        return None
+
+    wheel = {14, 2, 3, 4, 5}
+    if set(ranks) == wheel:
+        return 5
+
+    for high in [14, 13, 12, 11, 10, 9, 8, 7, 6]:
+        run = set(range(high, high - 5, -1))
+        if set(ranks) == run:
+            return high
+    return None
+
+def _build_straight(
+    cards: List[Card], high_rank: int
+) -> Tuple[HandCategory, List[Card], Tuple[int, ...]]:
+    
+    if high_rank == 5:
+        ordered_ranks = [5, 4, 3, 2, 14]
+    else:
+        ordered_ranks = list(range(high_rank, high_rank - 5, -1))
+
+    by_rank = {c.rank: c for c in cards}
+    chosen = [by_rank[r] for r in ordered_ranks]
+    return HandCategory.STRAIGHT, chosen, (high_rank,)
 
 def _find_trips(cards: List[Card]) -> List[Card] | None:
     

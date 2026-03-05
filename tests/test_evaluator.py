@@ -84,3 +84,41 @@ class TestThreeOfAKind:
         cat2, chosen2 = evaluate_hand(cards2)
         assert cat1 == cat2 == HandCategory.THREE_OF_A_KIND
         assert chosen1[0].rank == Rank.ACE and chosen2[0].rank == Rank.KING
+
+class TestStraight:
+    def test_detect_basic_straight(self):
+        cards = parse_cards("5s", "6h", "7d", "8c", "9s", "2h", "3d")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.STRAIGHT
+
+    def test_wheel_ace_low_straight(self):
+        """Example A: Board A♣2♦3♥4♠9♦, Player 5♣K♦ -> 5-high straight."""
+        board = parse_cards("Ac", "2d", "3h", "4s", "9d")
+        hole = parse_cards("5c", "Kd")
+        cards = board + hole
+        category, chosen = evaluate_hand(cards)
+        assert category == HandCategory.STRAIGHT
+        assert [c.rank for c in chosen] == [5, 4, 3, 2, 14]
+
+    def test_ace_high_straight(self):
+        """Example B: Board 10-J-Q-K-2, Player A-3 -> A-high straight."""
+        board = parse_cards("10c", "Jd", "Qh", "Ks", "2d")
+        hole = parse_cards("Ac", "3d")
+        cards = board + hole
+        category, chosen = evaluate_hand(cards)
+        assert category == HandCategory.STRAIGHT
+        assert [c.rank for c in chosen] == [14, 13, 12, 11, 10]
+
+    def test_no_wrap_around_invalid(self):
+        """Q-K-A-2-3 is not a valid straight. Only wheel and normal straights."""
+        cards = parse_cards("Qs", "Kh", "Ad", "2c", "3s", "7h", "8d")
+        category, chosen = evaluate_hand(cards)
+        assert category != HandCategory.STRAIGHT
+
+    def test_straight_tie_break_by_highest_card(self):
+        cards1 = parse_cards("5s", "6h", "7d", "8c", "9s", "2h", "3d")
+        cards2 = parse_cards("6s", "7h", "8d", "9c", "10s", "2h", "3d")
+        _, chosen1 = evaluate_hand(cards1)
+        _, chosen2 = evaluate_hand(cards2)
+        assert chosen1[0].rank == Rank.NINE
+        assert chosen2[0].rank == Rank.TEN
