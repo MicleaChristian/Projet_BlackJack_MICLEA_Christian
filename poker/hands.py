@@ -45,12 +45,23 @@ def _eval_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], Tuple[int, 
         raise ValueError("Need exactly 5 cards")
 
     straight = _find_straight(cards)
-    if straight:
-        return _build_straight(cards, straight)
-
     flush = _find_flush(cards)
+    if straight and flush:
+        return _build_straight_flush(cards, straight)
+
+    quads = _find_quads(cards)
+    if quads:
+        return _build_four_of_a_kind(cards, quads)
+
+    full = _find_full_house(cards)
+    if full:
+        return _build_full_house(cards, full)
+
     if flush:
         return _build_flush(cards, flush)
+
+    if straight:
+        return _build_straight(cards, straight)
 
     trips = _find_trips(cards)
     if trips:
@@ -81,6 +92,54 @@ def _find_straight(cards: List[Card]) -> int | None:
         if set(ranks) == run:
             return high
     return None
+
+def _build_straight_flush(
+    cards: List[Card], high_rank: int
+) -> Tuple[HandCategory, List[Card], Tuple[int, ...]]:
+    
+    _, chosen, rank_tuple = _build_straight(cards, high_rank)
+    return HandCategory.STRAIGHT_FLUSH, chosen, rank_tuple
+
+def _find_quads(cards: List[Card]) -> List[Card] | None:
+    
+    by_rank: dict[int, List[Card]] = {}
+    for c in cards:
+        by_rank.setdefault(c.rank, []).append(c)
+    for rank, group in sorted(by_rank.items(), key=lambda x: -x[0]):
+        if len(group) >= 4:
+            return group[:4]
+    return None
+
+def _find_full_house(cards: List[Card]) -> Tuple[List[Card], List[Card]] | None:
+    
+    by_rank: dict[int, List[Card]] = {}
+    for c in cards:
+        by_rank.setdefault(c.rank, []).append(c)
+    groups = sorted(by_rank.items(), key=lambda x: -x[0])
+    for i, (r1, g1) in enumerate(groups):
+        if len(g1) >= 3:
+            for r2, g2 in groups:
+                if r2 != r1 and len(g2) >= 2:
+                    return g1[:3], g2[:2]
+    return None
+
+def _build_four_of_a_kind(
+    cards: List[Card], quads: List[Card]
+) -> Tuple[HandCategory, List[Card], Tuple[int, ...]]:
+    
+    quad_rank = quads[0].rank
+    kicker = [c for c in cards if c not in quads][0]
+    chosen = quads + [kicker]
+    return HandCategory.FOUR_OF_A_KIND, chosen, (quad_rank, kicker.rank)
+
+def _build_full_house(
+    cards: List[Card], full: Tuple[List[Card], List[Card]]
+) -> Tuple[HandCategory, List[Card], Tuple[int, ...]]:
+    
+    trips, pair = full
+    chosen = trips + pair
+    rank_tuple = (trips[0].rank, pair[0].rank)
+    return HandCategory.FULL_HOUSE, chosen, rank_tuple
 
 def _build_straight(
     cards: List[Card], high_rank: int

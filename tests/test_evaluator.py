@@ -144,3 +144,57 @@ class TestFlush:
         _, chosen2 = evaluate_hand(cards2)
         assert chosen1[4].rank == Rank.FOUR
         assert chosen2[4].rank == Rank.FIVE
+
+class TestFullHouse:
+    def test_detect_full_house(self):
+        cards = parse_cards("As", "Ad", "Ah", "Ks", "Kd", "2c", "3h")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.FULL_HOUSE
+
+    def test_full_house_chosen5_trips_then_pair(self):
+        cards = parse_cards("As", "Ad", "Ah", "Ks", "Kd", "2c", "3h")
+        _, chosen = evaluate_hand(cards)
+        assert chosen[0].rank == chosen[1].rank == chosen[2].rank == Rank.ACE
+        assert chosen[3].rank == chosen[4].rank == Rank.KING
+
+    def test_full_house_tie_break_trips_then_pair(self):
+        cards1 = parse_cards("As", "Ad", "Ah", "Ks", "Kd", "2c", "3h")
+        cards2 = parse_cards("Ks", "Kd", "Kh", "As", "Ad", "2c", "3h")
+        _, chosen1 = evaluate_hand(cards1)
+        _, chosen2 = evaluate_hand(cards2)
+        assert chosen1[0].rank == Rank.ACE and chosen2[0].rank == Rank.KING
+
+class TestFourOfAKind:
+    def test_detect_four_of_a_kind(self):
+        cards = parse_cards("7c", "7d", "7h", "7s", "2d", "Ac", "Kc")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.FOUR_OF_A_KIND
+
+    def test_quads_chosen5_four_then_kicker(self):
+        """Example E: Board 7s, Player1 A+K, Player2 Q+J -> A kicker wins."""
+        board = parse_cards("7c", "7d", "7h", "7s", "2d")
+        hole1 = parse_cards("Ac", "Kc")
+        cards1 = board + hole1
+        _, chosen = evaluate_hand(cards1)
+        assert chosen[0].rank == chosen[1].rank == chosen[2].rank == chosen[3].rank == 7
+        assert chosen[4].rank == Rank.ACE
+
+    def test_quads_tie_break_quad_rank_then_kicker(self):
+        board = parse_cards("7c", "7d", "7h", "7s", "2d")
+        cards1 = board + parse_cards("Ac", "Kc")
+        cards2 = board + parse_cards("Qc", "Jc")
+        _, chosen1 = evaluate_hand(cards1)
+        _, chosen2 = evaluate_hand(cards2)
+        assert chosen1[4].rank == Rank.ACE
+        assert chosen2[4].rank == Rank.QUEEN
+
+class TestStraightFlush:
+    def test_detect_straight_flush(self):
+        cards = parse_cards("Ah", "Kh", "Qh", "Jh", "10h", "2c", "3d")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.STRAIGHT_FLUSH
+
+    def test_royal_flush_best_straight_flush(self):
+        cards = parse_cards("Ah", "Kh", "Qh", "Jh", "10h", "2c", "3d")
+        _, chosen = evaluate_hand(cards)
+        assert [c.rank for c in chosen] == [14, 13, 12, 11, 10]
