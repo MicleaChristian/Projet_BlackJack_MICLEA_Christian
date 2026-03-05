@@ -122,3 +122,25 @@ class TestStraight:
         _, chosen2 = evaluate_hand(cards2)
         assert chosen1[0].rank == Rank.NINE
         assert chosen2[0].rank == Rank.TEN
+
+class TestFlush:
+    def test_detect_flush(self):
+        cards = parse_cards("Ah", "Jh", "9h", "6h", "4h", "2c", "Kd")
+        category, _ = evaluate_hand(cards)
+        assert category == HandCategory.FLUSH
+
+    def test_flush_with_6_suited_picks_best_5(self):
+        """Example C: Board A♥J♥9♥4♥2♣, Player 6♥K♦ -> best 5 hearts: A,J,9,6,4."""
+        board = parse_cards("Ah", "Jh", "9h", "4h", "2c")
+        hole = parse_cards("6h", "Kd")
+        cards = board + hole
+        _, chosen = evaluate_hand(cards)
+        assert [c.rank for c in chosen] == [14, 11, 9, 6, 4]
+
+    def test_flush_tie_break_by_descending_ranks(self):
+        cards1 = parse_cards("Ah", "Jh", "9h", "6h", "4h", "2c", "Kd")
+        cards2 = parse_cards("Ah", "Jh", "9h", "6h", "5h", "2c", "Kd")
+        _, chosen1 = evaluate_hand(cards1)
+        _, chosen2 = evaluate_hand(cards2)
+        assert chosen1[4].rank == Rank.FOUR
+        assert chosen2[4].rank == Rank.FIVE

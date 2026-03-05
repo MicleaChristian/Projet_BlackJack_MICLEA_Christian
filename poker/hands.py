@@ -48,6 +48,10 @@ def _eval_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], Tuple[int, 
     if straight:
         return _build_straight(cards, straight)
 
+    flush = _find_flush(cards)
+    if flush:
+        return _build_flush(cards, flush)
+
     trips = _find_trips(cards)
     if trips:
         return _build_three_of_a_kind(cards, trips)
@@ -90,6 +94,19 @@ def _build_straight(
     by_rank = {c.rank: c for c in cards}
     chosen = [by_rank[r] for r in ordered_ranks]
     return HandCategory.STRAIGHT, chosen, (high_rank,)
+
+def _find_flush(cards: List[Card]) -> List[Card] | None:
+    
+    if len(set(c.suit for c in cards)) != 1:
+        return None
+    return sorted(cards, key=lambda c: (-c.rank, -c.suit))
+
+def _build_flush(
+    cards: List[Card], chosen: List[Card]
+) -> Tuple[HandCategory, List[Card], Tuple[int, ...]]:
+    
+    rank_tuple = tuple(c.rank for c in chosen)
+    return HandCategory.FLUSH, chosen, rank_tuple
 
 def _find_trips(cards: List[Card]) -> List[Card] | None:
     
